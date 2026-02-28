@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Create New Loan</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Select Client</label>
+                <select class="form-select" name="client_id" required>
+                    {% for client in clients %}
+                    <option value="{{ client[0] }}">{{ client[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Principal Amount ($)</label>
+                <input type="number" class="form-control" name="principal_amount" step="0.01" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Loan Term (Days)</label>
+                <input type="number" class="form-control" name="loan_term_days" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Loan</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

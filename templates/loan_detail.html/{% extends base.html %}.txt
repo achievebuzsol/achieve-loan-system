@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Loan #{{ loan.loan_id }}</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5>Loan Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Client:</strong> {{ loan.company_name }}</p>
+                        <p><strong>Principal:</strong> ${{ "%.2f"|format(loan.principal_amount) }}</p>
+                        <p><strong>Interest Rate:</strong> {{ "%.1f"|format(loan.interest_rate * 100) }}%</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Amount:</strong> ${{ "%.2f"|format(loan.total_amount) }}</p>
+                        <p><strong>Paid:</strong> ${{ "%.2f"|format(loan.paid_amount) }}</p>
+                        <p><strong>Outstanding:</strong> ${{ "%.2f"|format(loan.outstanding_amount) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Payment History</h5>
+            </div>
+            <div class="card-body">
+                {% if loan.payments %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in loan.payments %}
+                        <tr>
+                            <td>{{ payment[3] }}</td>
+                            <td>${{ "%.2f"|format(payment[2]) }}</td>
+                            <td>{{ payment[4] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No payments recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if loan.status != 'paid' %}
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Record Payment</h5>
+                <form method="POST" action="{{ url_for('make_payment', loan_id=loan.loan_id) }}">
+                    <div class="mb-3">
+                        <label>Amount</label>
+                        <input type="number" class="form-control" name="amount" step="0.01" max="{{ loan.outstanding_amount }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Method</label>
+                        <select class="form-select" name="payment_method">
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-light w-100">Record Payment</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> This loan is fully paid.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

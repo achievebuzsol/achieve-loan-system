@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard Overview</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card text-center p-3">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <h2>{{ data.total_clients }}</h2>
+                <p>Total Clients</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white text-center p-3">
+            <div class="card-body">
+                <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
+                <h2>{{ data.total_loans }}</h2>
+                <p>Total Loans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white text-center p-3">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h2>{{ data.active_loans }}</h2>
+                <p>Active Loans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white text-center p-3">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h2>{{ data.delinquent_loans }}</h2>
+                <p>Delinquent</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-circle"></i> Recent Alerts</h5>
+            </div>
+            <div class="card-body">
+                {% for notification in data.recent_notifications %}
+                <div class="alert alert-danger">
+                    <strong>{{ notification.company_name }}</strong><br>
+                    {{ notification.message }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-chart-line"></i> Financial Summary</h5>
+            </div>
+            <div class="card-body">
+                <p>Total Principal: ${{ "%.2f"|format(data.total_principal) }}</p>
+                <p>Total Paid: ${{ "%.2f"|format(data.total_paid) }}</p>
+                <p>Outstanding: ${{ "%.2f"|format(data.total_principal - data.total_paid) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

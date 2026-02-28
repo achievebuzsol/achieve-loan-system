@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Loans</h2>
+<a href="{{ url_for('create_loan') }}" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Create New Loan</a>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                <tr>
+                    <td>#{{ loan[0] }}</td>
+                    <td>{{ loan[11] }}</td>
+                    <td>${{ "%.2f"|format(loan[2]) }}</td>
+                    <td>{{ "%.1f"|format(loan[3] * 100) }}%</td>
+                    <td>{{ loan[6] }}</td>
+                    <td>
+                        {% if loan[9] == 'active' %}
+                            <span class="badge bg-warning">Active</span>
+                        {% elif loan[9] == 'paid' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% else %}
+                            <span class="badge bg-danger">Delinquent</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('loan_detail', loan_id=loan[0]) }}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
