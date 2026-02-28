@@ -11,23 +11,50 @@
                 <input type="text" class="form-control" value="{{ loan[11] }}" disabled>
                 <small class="text-muted">Client cannot be changed</small>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Principal Amount ($)</label>
-                <input type="number" class="form-control" name="principal_amount" step="0.01" value="{{ loan[2] }}" required>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Principal Amount ($)</label>
+                        <input type="number" class="form-control" name="principal_amount" step="0.01" value="{{ loan[2] }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Interest Rate (%)</label>
+                        <input type="number" class="form-control" name="interest_rate" step="0.1" value="{{ "%.1f"|format(loan[3] * 100) }}" required>
+                        <small class="text-muted">Enter as percentage (e.g., 12.5 for 12.5%)</small>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Interest Rate (%)</label>
-                <input type="number" class="form-control" name="interest_rate" step="0.1" value="{{ "%.1f"|format(loan[3] * 100) }}" required>
-                <small class="text-muted">Enter as percentage (e.g., 12.5 for 12.5%)</small>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Loan Term (Days)</label>
+                        <input type="number" class="form-control" name="loan_term_days" value="{{ loan[4] }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Number of Installments</label>
+                        <input type="number" class="form-control" name="installments" min="1" value="{{ loan[12] or 1 }}" required>
+                        <small class="text-muted">How many payments to split the loan into</small>
+                    </div>
+                </div>
             </div>
+            
             <div class="mb-3">
-                <label class="form-label">Loan Term (Days)</label>
-                <input type="number" class="form-control" name="loan_term_days" value="{{ loan[4] }}" required>
+                <label class="form-label">Processing Fee ($)</label>
+                <input type="number" class="form-control" name="processing_fee" step="0.01" value="{{ loan[13] or 0 }}" required>
+                <small class="text-muted">One-time administrative fee</small>
             </div>
+            
             <div class="mb-3">
                 <label class="form-label">Due Date</label>
                 <input type="date" class="form-control" name="due_date" value="{{ loan[6] }}" required>
             </div>
+            
             <button type="submit" class="btn btn-primary">Update Loan</button>
             <a href="{{ url_for('loans') }}" class="btn btn-secondary">Cancel</a>
         </form>

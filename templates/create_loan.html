@@ -14,22 +14,48 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Principal Amount ($)</label>
-                <input type="number" class="form-control" name="principal_amount" step="0.01" required>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Principal Amount ($)</label>
+                        <input type="number" class="form-control" name="principal_amount" step="0.01" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Interest Rate (%)</label>
+                        <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" required>
+                        <small class="text-muted">
+                            Base rate: 15%. Client rating may reduce this rate.
+                            <span id="rate_info" class="text-info"></span>
+                        </small>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Interest Rate (%)</label>
-                <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" required>
-                <small class="text-muted">
-                    Base rate: 15%. Client rating may reduce this rate.
-                    <span id="rate_info" class="text-info"></span>
-                </small>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Loan Term (Days)</label>
+                        <input type="number" class="form-control" name="loan_term_days" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Number of Installments</label>
+                        <input type="number" class="form-control" name="installments" min="1" value="1" required>
+                        <small class="text-muted">How many payments to split the loan into</small>
+                    </div>
+                </div>
             </div>
+            
             <div class="mb-3">
-                <label class="form-label">Loan Term (Days)</label>
-                <input type="number" class="form-control" name="loan_term_days" required>
+                <label class="form-label">Processing Fee ($)</label>
+                <input type="number" class="form-control" name="processing_fee" step="0.01" value="0" required>
+                <small class="text-muted">One-time administrative fee</small>
             </div>
+            
             <button type="submit" class="btn btn-primary">Create Loan</button>
         </form>
     </div>
