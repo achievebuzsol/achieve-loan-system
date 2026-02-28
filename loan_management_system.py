@@ -1,3 +1,10 @@
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+import os
+
+app = Flask(@app.route('/test')
+def test():
+    return "Hello! Flask is working on Render!"__name__, template_folder='templates')
+app.secret_key = 'your-secret-key-here'
 import sqlite3
 import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
@@ -405,23 +412,123 @@ def add_client():
     
     return render_template('add_client.html')
 
-@app.route('/create_loan', methods=['GET', 'POST'])
-def create_loan():
-    if request.method == 'POST':
-        client_id = int(request.form['client_id'])
-        principal_amount = float(request.form['principal_amount'])
-        loan_term_days = int(request.form['loan_term_days'])
-        
-        loan_id = lms.create_loan(client_id, principal_amount, loan_term_days)
-        return redirect(url_for('loan_detail', loan_id=loan_id))
-    
+@app.route('/edit_client/<int:client_id>', methods=['GET', 'POST'])
+def edit_client(client_id):
     conn = sqlite3.connect(lms.db_name)
     cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        company_name = request.form['company_name']
+        contact_person = request.form['contact_person']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+        
+        cursor.execute('''
+            UPDATE clients 
+            SET company_name = ?, contact_person = ?, email = ?, phone = ?, address = ?
+            WHERE client_id = ?
+        ''', (company_name, contact_person, email, phone, address, client_id))
+        
+        conn.commit()
+        conn.close()
+        return redirect(url_for('clients'))
+    
+    # GET request - show edit form
+    cursor.execute('SELECT * FROM clients WHERE client_id = ?', (client_id,))
+    client = cursor.fetchone()
+    conn.close()
+    
+    return render_template('edit_client.html', client=client)
+
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Create New Loan</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Select Client</label>
+                <select class="form-select" name="client_id" id="client_select" required>
+                    {% for client in clients %}
+                    <option value="{{ client[0] }}" data-rating="{{ client[2] }}">{{ client[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Principal Amount ($)</label>
+                <input type="number" class="form-control" name="principal_amount" step="0.01" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Interest Rate (%)</label>
+                <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" required>
+                <small class="text-muted">
+                    Base rate: 15%. Client rating may reduce this rate.
+                    <span id="rate_info" class="text-info"></span>
+                </small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Loan Term (Days)</label>
+                <input type="number" class="form-control" name="loan_term_days" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Loan</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('client_select').addEventListener('change', function() {
+    var selected = this.options[this.selectedIndex];
+    var rating = selected.getAttribute('data-rating');
+    var baseRate = 15.0;
+    var discount = (rating - 1) * 0.5;
+    var finalRate = Math.max(baseRate - discount, baseRate * 0.75);
+    document.getElementById('interest_rate').value = finalRate.toFixed(1);
+    document.getElementById('rate_info').textContent = ' (Client rating: ' + rating + '/10, Applied rate: ' + finalRate.toFixed(1) + '%)';
+});
+</script>
+{% endblock %}
+@app.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
+def edit_loan(loan_id):
+    conn = sqlite3.connect(lms.db_name)
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        principal_amount = float(request.form['principal_amount'])
+        interest_rate = float(request.form['interest_rate']) / 100  # Convert from percentage
+        loan_term_days = int(request.form['loan_term_days'])
+        due_date = request.form['due_date']
+        
+        # Recalculate total amount
+        interest_amount = principal_amount * interest_rate * (loan_term_days / 365)
+        total_amount = principal_amount + interest_amount
+        
+        cursor.execute('''
+            UPDATE loans 
+            SET principal_amount = ?, interest_rate = ?, loan_term_days = ?, due_date = ?, total_amount = ?
+            WHERE loan_id = ?
+        ''', (principal_amount, interest_rate, loan_term_days, due_date, total_amount, loan_id))
+        
+        conn.commit()
+        conn.close()
+        return redirect(url_for('loans'))
+    
+    # GET request - show edit form
+    cursor.execute('''
+        SELECT l.*, c.company_name 
+        FROM loans l
+        JOIN clients c ON l.client_id = c.client_id
+        WHERE l.loan_id = ?
+    ''', (loan_id,))
+    loan = cursor.fetchone()
+    
     cursor.execute('SELECT client_id, company_name FROM clients ORDER BY company_name')
     clients = cursor.fetchall()
     conn.close()
     
-    return render_template('create_loan.html', clients=clients)
+    return render_template('edit_loan.html', loan=loan, clients=clients)
 
 @app.route('/make_payment/<int:loan_id>', methods=['POST'])
 def make_payment(loan_id):
