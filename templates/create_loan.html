@@ -43,7 +43,7 @@ document.getElementById('client_select').addEventListener('change', function() {
     var discount = (rating - 1) * 0.5;
     var finalRate = Math.max(baseRate - discount, baseRate * 0.75);
     document.getElementById('interest_rate').value = finalRate.toFixed(1);
-    document.getElementById('rate_info').textContent = ' (Client rating: ' + rating + '/10, Applied rate: ' + finalRate.toFixed(1) + '%)';
+    document.getElementById('rate_info').textContent = ' (Client rating: ' + rating + '/10, Suggested rate: ' + finalRate.toFixed(1) + '%)';
 });
 </script>
 {% endblock %}

@@ -8,9 +8,7 @@
         <form method="POST">
             <div class="mb-3">
                 <label class="form-label">Client</label>
-                <select class="form-select" name="client_id" disabled>
-                    <option selected>{{ loan[11] }}</option>
-                </select>
+                <input type="text" class="form-control" value="{{ loan[11] }}" disabled>
                 <small class="text-muted">Client cannot be changed</small>
             </div>
             <div class="mb-3">
