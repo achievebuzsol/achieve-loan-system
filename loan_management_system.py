@@ -398,28 +398,21 @@ def add_client():
         contact_person = request.form['contact_person']
         email = request.form['email']
         phone = request.form['phone']
-        street_address = request.form.get('street_address')
-        city = request.form.get('city')
-        parish = request.form['parish']
         
-        # Build address string for backward compatibility
-        full_address = f"{street_address or ''}, {city or ''}, {parish}"
+        # Combine address fields for now
+        street = request.form.get('street_address', '')
+        city = request.form.get('city', '')
+        parish = request.form.get('parish', '')
+        full_address = f"{street}, {city}, {parish}"
         
         conn = sqlite3.connect(lms.db_name)
         cursor = conn.cursor()
         
-        # Try new schema first, fall back to old schema
-        try:
-            cursor.execute('''
-                INSERT INTO clients (company_name, contact_person, email, phone, street_address, city, parish)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (company_name if company_name else None, contact_person, email, phone, street_address, city, parish))
-        except sqlite3.OperationalError:
-            # Old schema - use address field instead
-            cursor.execute('''
-                INSERT INTO clients (company_name, contact_person, email, phone, address)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (company_name if company_name else None, contact_person, email, phone, full_address))
+        # Use old schema (address column)
+        cursor.execute('''
+            INSERT INTO clients (company_name, contact_person, email, phone, address)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (company_name, contact_person, email, phone, full_address))
         
         client_id = cursor.lastrowid
         conn.commit()
