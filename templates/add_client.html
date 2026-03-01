@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Edit Client</h2>
+<h2 class="mb-4">Add New Client</h2>
 
 <div class="card">
     <div class="card-body">
@@ -10,13 +10,13 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Company Name <span class="text-muted">(Optional)</span></label>
-                        <input type="text" class="form-control" name="company_name" value="{{ client[1] or '' }}" placeholder="Leave blank if individual">
+                        <input type="text" class="form-control" name="company_name" placeholder="Leave blank if individual">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="contact_person" value="{{ client[2] }}" required>
+                        <input type="text" class="form-control" name="contact_person" required>
                     </div>
                 </div>
             </div>
@@ -25,13 +25,13 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" name="email" value="{{ client[3] }}" required>
+                        <input type="email" class="form-control" name="email" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Phone <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="phone" value="{{ client[4] }}" required>
+                        <input type="text" class="form-control" name="phone" required>
                     </div>
                 </div>
             </div>
@@ -40,14 +40,14 @@
             
             <div class="mb-3">
                 <label class="form-label">Street Address</label>
-                <input type="text" class="form-control" name="street_address" value="{{ address_parts[0] if address_parts else '' }}">
+                <input type="text" class="form-control" name="street_address" placeholder="123 Main Street">
             </div>
             
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">City</label>
-                        <input type="text" class="form-control" name="city" value="{{ address_parts[1] if address_parts and address_parts|length > 1 else '' }}">
+                        <input type="text" class="form-control" name="city" placeholder="e.g., Kingston, Montego Bay">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -55,16 +55,26 @@
                         <label class="form-label">Parish <span class="text-danger">*</span></label>
                         <select class="form-select" name="parish" required>
                             <option value="">Select Parish</option>
-                            {% set parishes = ['Kingston', 'St. Andrew', 'Portland', 'St. Thomas', 'St. Catherine', 'St. Mary', 'St. Ann', 'Manchester', 'Clarendon', 'St. Elizabeth', 'Westmoreland', 'Hanover', 'St. James', 'Trelawny'] %}
-                            {% for parish in parishes %}
-                            <option value="{{ parish }}" {% if address_parts and address_parts|length > 2 and address_parts[2] == parish %}selected{% endif %}>{{ parish }}</option>
-                            {% endfor %}
+                            <option value="Kingston">Kingston</option>
+                            <option value="St. Andrew">St. Andrew</option>
+                            <option value="Portland">Portland</option>
+                            <option value="St. Thomas">St. Thomas</option>
+                            <option value="St. Catherine">St. Catherine</option>
+                            <option value="St. Mary">St. Mary</option>
+                            <option value="St. Ann">St. Ann</option>
+                            <option value="Manchester">Manchester</option>
+                            <option value="Clarendon">Clarendon</option>
+                            <option value="St. Elizabeth">St. Elizabeth</option>
+                            <option value="Westmoreland">Westmoreland</option>
+                            <option value="Hanover">Hanover</option>
+                            <option value="St. James">St. James</option>
+                            <option value="Trelawny">Trelawny</option>
                         </select>
                     </div>
                 </div>
             </div>
             
-            <button type="submit" class="btn btn-primary">Update Client</button>
+            <button type="submit" class="btn btn-primary">Add Client</button>
             <a href="{{ url_for('clients') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
