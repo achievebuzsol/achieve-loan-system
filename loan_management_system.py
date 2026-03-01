@@ -402,7 +402,28 @@ def add_client():
         city = request.form.get('city')
         parish = request.form['parish']
         
-        client_id = lms.create_client(company_name, contact_person, email, phone, street_address, city, parish)
+        # Build address string for backward compatibility
+        full_address = f"{street_address or ''}, {city or ''}, {parish}"
+        
+        conn = sqlite3.connect(lms.db_name)
+        cursor = conn.cursor()
+        
+        # Try new schema first, fall back to old schema
+        try:
+            cursor.execute('''
+                INSERT INTO clients (company_name, contact_person, email, phone, street_address, city, parish)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (company_name if company_name else None, contact_person, email, phone, street_address, city, parish))
+        except sqlite3.OperationalError:
+            # Old schema - use address field instead
+            cursor.execute('''
+                INSERT INTO clients (company_name, contact_person, email, phone, address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (company_name if company_name else None, contact_person, email, phone, full_address))
+        
+        client_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
         return redirect(url_for('client_detail', client_id=client_id))
     
     return render_template('add_client.html')
@@ -513,6 +534,7 @@ def make_payment(loan_id):
     
     lms.make_payment(loan_id, amount, payment_method, notes)
     return redirect(url_for('loan_detail', loan_id=loan_id))
+    
 
 @app.route('/api/notifications')
 def api_notifications():
@@ -535,6 +557,18 @@ def api_notifications():
     
     conn.close()
     return jsonify(notifications)
+    
+@app.route('/reset-db')
+def reset_db():
+    import os
+    try:
+        if os.path.exists(lms.db_name):
+            os.remove(lms.db_name)
+        # Reinitialize with new schema
+        lms.__init__(db_name=lms.db_name)
+        return "Database reset successfully! <br><a href='/add_client'>Add Client</a> | <a href='/'>Dashboard</a>"
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
