@@ -8,6 +8,19 @@ import math
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
+# FORCE DATABASE RESET - Delete old database on startup
+db_path = os.environ.get('DATABASE_URL', 'loan_management.db')
+if db_path.startswith('/app/data'):
+    os.makedirs('/app/data', exist_ok=True)
+
+# Delete old database to force schema update
+if os.path.exists(db_path):
+    try:
+        os.remove(db_path)
+        print(f"Deleted old database: {db_path}")
+    except:
+        pass
+
 class LoanManagementSystem:
     def __init__(self, db_name='loan_management.db'):
         self.db_name = db_name
@@ -85,6 +98,7 @@ class LoanManagementSystem:
         
         conn.commit()
         conn.close()
+        print(f"Database initialized: {self.db_name}")
     
     def calculate_interest_rate(self, client_id, base_rate=0.15):
         """Calculate interest rate based on client rating"""
@@ -336,9 +350,6 @@ class LoanManagementSystem:
         }
 
 # Initialize the loan management system
-db_path = os.environ.get('DATABASE_URL', 'loan_management.db')
-if db_path.startswith('/app/data'):
-    os.makedirs('/app/data', exist_ok=True)
 lms = LoanManagementSystem(db_name=db_path)
 
 # Flask routes
@@ -398,25 +409,11 @@ def add_client():
         contact_person = request.form['contact_person']
         email = request.form['email']
         phone = request.form['phone']
+        street_address = request.form.get('street_address')
+        city = request.form.get('city')
+        parish = request.form['parish']
         
-        # Combine address fields for now
-        street = request.form.get('street_address', '')
-        city = request.form.get('city', '')
-        parish = request.form.get('parish', '')
-        full_address = f"{street}, {city}, {parish}"
-        
-        conn = sqlite3.connect(lms.db_name)
-        cursor = conn.cursor()
-        
-        # Use old schema (address column)
-        cursor.execute('''
-            INSERT INTO clients (company_name, contact_person, email, phone, address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (company_name, contact_person, email, phone, full_address))
-        
-        client_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+        client_id = lms.create_client(company_name, contact_person, email, phone, street_address, city, parish)
         return redirect(url_for('client_detail', client_id=client_id))
     
     return render_template('add_client.html')
@@ -527,7 +524,6 @@ def make_payment(loan_id):
     
     lms.make_payment(loan_id, amount, payment_method, notes)
     return redirect(url_for('loan_detail', loan_id=loan_id))
-    
 
 @app.route('/api/notifications')
 def api_notifications():
@@ -550,7 +546,6 @@ def api_notifications():
     
     conn.close()
     return jsonify(notifications)
-    
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
