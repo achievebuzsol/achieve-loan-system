@@ -13,7 +13,10 @@
                     <th>Client</th>
                     <th>Principal</th>
                     <th>Interest</th>
-                    <th>Due Date</th>
+                    <th>Effective Date</th>
+                    <th>Maturity Date</th>
+                    <th>Fees</th>
+                    <th>Total</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -25,11 +28,14 @@
                     <td>{{ loan[11] }}</td>
                     <td>${{ "%.2f"|format(loan[2]) }}</td>
                     <td>{{ "%.1f"|format(loan[3] * 100) }}%</td>
-                    <td>{{ loan[6] }}</td>
+                    <td>{{ loan[7] }}</td>
+                    <td>{{ loan[8] }}</td>
+                    <td>${{ "%.2f"|format((loan[6] or 0) + (loan[12] or 0) + (loan[13] or 0)) }}</td>
+                    <td>${{ "%.2f"|format(loan[9]) }}</td>
                     <td>
-                        {% if loan[9] == 'active' %}
+                        {% if loan[10] == 'active' %}
                             <span class="badge bg-warning">Active</span>
-                        {% elif loan[9] == 'paid' %}
+                        {% elif loan[10] == 'paid' %}
                             <span class="badge bg-success">Paid</span>
                         {% else %}
                             <span class="badge bg-danger">Delinquent</span>
@@ -37,7 +43,7 @@
                     </td>
                     <td>
                         <a href="{{ url_for('loan_detail', loan_id=loan[0]) }}" class="btn btn-sm btn-primary">View</a>
-<a href="{{ url_for('edit_loan', loan_id=loan[0]) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{{ url_for('edit_loan', loan_id=loan[0]) }}" class="btn btn-sm btn-warning">Edit</a>
                     </td>
                 </tr>
                 {% endfor %}

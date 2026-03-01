@@ -6,7 +6,7 @@
 <div class="card">
     <div class="card-body">
         {% if clients %}
-        <form method="POST">
+        <form method="POST" id="loanForm">
             <div class="mb-3">
                 <label class="form-label">Select Client <span class="text-danger">*</span></label>
                 <select class="form-select" name="client_id" id="client_select" required>
@@ -21,24 +21,19 @@
                     </option>
                     {% endfor %}
                 </select>
-                <small class="text-muted">Found {{ clients|length }} client(s)</small>
             </div>
             
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Principal Amount ($) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="principal_amount" step="0.01" min="1" required>
+                        <input type="number" class="form-control" name="principal_amount" id="principal_amount" step="0.01" min="1" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Interest Rate (%) <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" min="0" max="100" required>
-                        <small class="text-muted">
-                            Base rate: 15%. Client rating may reduce this.
-                            <span id="rate_info" class="text-info"></span>
-                        </small>
                     </div>
                 </div>
             </div>
@@ -46,23 +41,78 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
+                        <label class="form-label">Effective Loan Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="effective_date" id="effective_date" required>
+                        <small class="text-muted">Date when loan becomes active</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
                         <label class="form-label">Loan Term (Days) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="loan_term_days" min="1" required>
+                        <input type="number" class="form-control" name="loan_term_days" id="loan_term_days" min="1" required>
+                        <small class="text-muted">Maturity date will be calculated automatically</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Loan Maturity Date</label>
+                        <input type="date" class="form-control" name="maturity_date" id="maturity_date" readonly>
+                        <small class="text-muted">Auto-calculated from effective date + term</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Number of Installments</label>
                         <input type="number" class="form-control" name="installments" min="1" value="1">
-                        <small class="text-muted">How many payments to split into</small>
                     </div>
                 </div>
             </div>
             
-            <div class="mb-3">
-                <label class="form-label">Processing Fee ($)</label>
-                <input type="number" class="form-control" name="processing_fee" step="0.01" value="0" min="0">
-                <small class="text-muted">One-time administrative fee</small>
+            <div class="card bg-light mb-3">
+                <div class="card-header">
+                    <h6>Fees (Added to Total Loan Amount)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Processing Fee ($)</label>
+                                <input type="number" class="form-control fee-input" name="processing_fee" id="processing_fee" step="0.01" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Legal Fee ($)</label>
+                                <input type="number" class="form-control fee-input" name="legal_fee" id="legal_fee" step="0.01" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Other Fees ($)</label>
+                                <input type="number" class="form-control fee-input" name="other_fees" id="other_fees" step="0.01" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Fee Description</label>
+                            <input type="text" class="form-control" name="fee_description" placeholder="e.g., Documentation, Insurance, etc.">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <h6>Loan Summary</h6>
+                <div class="row">
+                    <div class="col-md-3"><strong>Principal:</strong> $<span id="sum_principal">0.00</span></div>
+                    <div class="col-md-3"><strong>Interest:</strong> $<span id="sum_interest">0.00</span></div>
+                    <div class="col-md-3"><strong>Fees:</strong> $<span id="sum_fees">0.00</span></div>
+                    <div class="col-md-3"><strong>Total:</strong> $<span id="sum_total">0.00</span></div>
+                </div>
             </div>
             
             <button type="submit" class="btn btn-primary">Create Loan</button>
@@ -78,6 +128,51 @@
 </div>
 
 <script>
+// Set default effective date to today
+document.getElementById('effective_date').valueAsDate = new Date();
+
+// Calculate maturity date when effective date or term changes
+function calculateMaturityDate() {
+    var effectiveDate = document.getElementById('effective_date').value;
+    var termDays = parseInt(document.getElementById('loan_term_days').value) || 0;
+    
+    if (effectiveDate && termDays > 0) {
+        var date = new Date(effectiveDate);
+        date.setDate(date.getDate() + termDays);
+        document.getElementById('maturity_date').valueAsDate = date;
+    }
+    calculateTotals();
+}
+
+// Calculate loan totals
+function calculateTotals() {
+    var principal = parseFloat(document.getElementById('principal_amount').value) || 0;
+    var rate = parseFloat(document.getElementById('interest_rate').value) || 0;
+    var term = parseInt(document.getElementById('loan_term_days').value) || 0;
+    var processing = parseFloat(document.getElementById('processing_fee').value) || 0;
+    var legal = parseFloat(document.getElementById('legal_fee').value) || 0;
+    var other = parseFloat(document.getElementById('other_fees').value) || 0;
+    
+    var interest = principal * (rate / 100) * (term / 365);
+    var totalFees = processing + legal + other;
+    var total = principal + interest + totalFees;
+    
+    document.getElementById('sum_principal').textContent = principal.toFixed(2);
+    document.getElementById('sum_interest').textContent = interest.toFixed(2);
+    document.getElementById('sum_fees').textContent = totalFees.toFixed(2);
+    document.getElementById('sum_total').textContent = total.toFixed(2);
+}
+
+// Add event listeners
+document.getElementById('effective_date').addEventListener('change', calculateMaturityDate);
+document.getElementById('loan_term_days').addEventListener('input', calculateMaturityDate);
+document.getElementById('principal_amount').addEventListener('input', calculateTotals);
+document.getElementById('interest_rate').addEventListener('input', calculateTotals);
+document.querySelectorAll('.fee-input').forEach(input => {
+    input.addEventListener('input', calculateTotals);
+});
+
+// Client rating effect on interest rate
 document.getElementById('client_select').addEventListener('change', function() {
     var selected = this.options[this.selectedIndex];
     if (selected.value === "") return;
@@ -87,7 +182,7 @@ document.getElementById('client_select').addEventListener('change', function() {
     var discount = (parseFloat(rating) - 1) * 0.5;
     var finalRate = Math.max(baseRate - discount, baseRate * 0.75);
     document.getElementById('interest_rate').value = finalRate.toFixed(1);
-    document.getElementById('rate_info').textContent = ' (Client rating: ' + rating + '/10, Suggested rate: ' + finalRate.toFixed(1) + '%)';
+    calculateTotals();
 });
 </script>
 {% endblock %}

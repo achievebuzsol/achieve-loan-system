@@ -1,71 +1,92 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Edit Client</h2>
+<h2 class="mb-4">Edit Loan #{{ loan[0] }}</h2>
 
 <div class="card">
     <div class="card-body">
         <form method="POST">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Company Name <span class="text-muted">(Optional)</span></label>
-                        <input type="text" class="form-control" name="company_name" value="{{ client[1] or '' }}" placeholder="Leave blank if individual">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="contact_person" value="{{ client[2] }}" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" name="email" value="{{ client[3] }}" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Phone <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="phone" value="{{ client[4] }}" required>
-                    </div>
-                </div>
-            </div>
-            
-            <h5 class="mt-4 mb-3">Address Information</h5>
-            
             <div class="mb-3">
-                <label class="form-label">Street Address</label>
-                <input type="text" class="form-control" name="street_address" value="{{ client[5] or '' }}">
+                <label class="form-label">Client</label>
+                <input type="text" class="form-control" value="{{ loan[11] }}" disabled>
+                <small class="text-muted">Client cannot be changed</small>
             </div>
             
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">City</label>
-                        <input type="text" class="form-control" name="city" value="{{ client[6] or '' }}">
+                        <label class="form-label">Principal Amount ($)</label>
+                        <input type="number" class="form-control" name="principal_amount" step="0.01" value="{{ loan[2] }}" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">Parish <span class="text-danger">*</span></label>
-                        <select class="form-select" name="parish" required>
-                            <option value="">Select Parish</option>
-                            {% set parishes = ['Kingston', 'St. Andrew', 'Portland', 'St. Thomas', 'St. Catherine', 'St. Mary', 'St. Ann', 'Manchester', 'Clarendon', 'St. Elizabeth', 'Westmoreland', 'Hanover', 'St. James', 'Trelawny'] %}
-                            {% for parish in parishes %}
-                            <option value="{{ parish }}" {% if client[7] == parish %}selected{% endif %}>{{ parish }}</option>
-                            {% endfor %}
-                        </select>
+                        <label class="form-label">Interest Rate (%)</label>
+                        <input type="number" class="form-control" name="interest_rate" step="0.1" value="{{ "%.2f"|format(loan[3] * 100) }}" required>
                     </div>
                 </div>
             </div>
             
-            <button type="submit" class="btn btn-primary">Update Client</button>
-            <a href="{{ url_for('clients') }}" class="btn btn-secondary">Cancel</a>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Effective Date</label>
+                        <input type="date" class="form-control" name="effective_date" value="{{ loan[7] }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Maturity Date</label>
+                        <input type="date" class="form-control" name="maturity_date" value="{{ loan[8] }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Loan Term (Days)</label>
+                        <input type="number" class="form-control" name="loan_term_days" value="{{ loan[4] }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Number of Installments</label>
+                        <input type="number" class="form-control" name="installments" value="{{ loan[5] or 1 }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card bg-light mb-3">
+                <div class="card-header">
+                    <h6>Fees (Added to Total Loan Amount)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Processing Fee ($)</label>
+                                <input type="number" class="form-control" name="processing_fee" step="0.01" value="{{ loan[6] or 0 }}" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Legal Fee ($)</label>
+                                <input type="number" class="form-control" name="legal_fee" step="0.01" value="{{ loan[12] or 0 }}" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Other Fees ($)</label>
+                                <input type="number" class="form-control" name="other_fees" step="0.01" value="{{ loan[13] or 0 }}" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Update Loan</button>
+            <a href="{{ url_for('loans') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 </div>

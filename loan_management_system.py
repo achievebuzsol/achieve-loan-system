@@ -8,18 +8,10 @@ import math
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
-# FORCE DATABASE RESET - Delete old database on startup
+# Database setup
 db_path = os.environ.get('DATABASE_URL', 'loan_management.db')
 if db_path.startswith('/app/data'):
     os.makedirs('/app/data', exist_ok=True)
-
-# Delete old database to force schema update
-if os.path.exists(db_path):
-    try:
-        os.remove(db_path)
-        print(f"Deleted old database: {db_path}")
-    except:
-        pass
 
 class LoanManagementSystem:
     def __init__(self, db_name='loan_management.db'):
@@ -31,7 +23,7 @@ class LoanManagementSystem:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
-        # Clients table - updated for structured address
+        # Clients table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS clients (
                 client_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +42,7 @@ class LoanManagementSystem:
             )
         ''')
         
-        # Loans table - updated with installments and processing fee
+        # Loans table - updated with all new fields
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS loans (
                 loan_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +52,10 @@ class LoanManagementSystem:
                 loan_term_days INTEGER NOT NULL,
                 installments INTEGER DEFAULT 1,
                 processing_fee REAL DEFAULT 0,
+                legal_fee REAL DEFAULT 0,
+                other_fees REAL DEFAULT 0,
+                fee_description TEXT,
+                effective_date DATE NOT NULL,
                 start_date DATE NOT NULL,
                 due_date DATE NOT NULL,
                 total_amount REAL NOT NULL,
@@ -98,7 +94,6 @@ class LoanManagementSystem:
         
         conn.commit()
         conn.close()
-        print(f"Database initialized: {self.db_name}")
     
     def calculate_interest_rate(self, client_id, base_rate=0.15):
         """Calculate interest rate based on client rating"""
@@ -134,23 +129,35 @@ class LoanManagementSystem:
         
         return client_id
     
-    def create_loan(self, client_id, principal_amount, interest_rate, loan_term_days, installments=1, processing_fee=0):
-        """Create a new loan with custom interest rate, installments and processing fee"""
+    def create_loan(self, client_id, principal_amount, interest_rate, loan_term_days, 
+                    effective_date, installments=1, processing_fee=0, legal_fee=0, 
+                    other_fees=0, fee_description=''):
+        """Create a new loan with all new features"""
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
+        # Calculate interest
         interest_amount = principal_amount * interest_rate * (loan_term_days / 365)
-        total_amount = principal_amount + interest_amount + processing_fee
         
-        start_date = datetime.now().date()
-        due_date = start_date + timedelta(days=loan_term_days)
+        # Total fees
+        total_fees = processing_fee + legal_fee + other_fees
+        
+        # Total loan amount (principal + interest + all fees)
+        total_amount = principal_amount + interest_amount + total_fees
+        
+        # Calculate dates
+        effective = datetime.strptime(effective_date, '%Y-%m-%d').date()
+        start_date = effective
+        due_date = effective + timedelta(days=loan_term_days)
         
         cursor.execute('''
             INSERT INTO loans (client_id, principal_amount, interest_rate, loan_term_days, 
-                             installments, processing_fee, start_date, due_date, total_amount)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             installments, processing_fee, legal_fee, other_fees, fee_description,
+                             effective_date, start_date, due_date, total_amount)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (client_id, principal_amount, interest_rate, loan_term_days, 
-              installments, processing_fee, start_date, due_date, total_amount))
+              installments, processing_fee, legal_fee, other_fees, fee_description,
+              effective_date, start_date, due_date, total_amount))
         
         loan_id = cursor.lastrowid
         cursor.execute('UPDATE clients SET total_loans = total_loans + 1 WHERE client_id = ?', (client_id,))
@@ -447,9 +454,8 @@ def edit_client(client_id):
     cursor.execute('SELECT * FROM clients WHERE client_id = ?', (client_id,))
     client = cursor.fetchone()
     
-    # Parse old address format if exists
     address_parts = []
-    if client[5]:  # old address field might contain combined data
+    if client[5]:
         address_parts = client[5].split(', ') if ',' in client[5] else [client[5], '', '']
     
     conn.close()
@@ -463,16 +469,29 @@ def create_loan():
         principal_amount = float(request.form['principal_amount'])
         interest_rate = float(request.form['interest_rate']) / 100
         loan_term_days = int(request.form['loan_term_days'])
+        effective_date = request.form['effective_date']
         installments = int(request.form.get('installments', 1))
         processing_fee = float(request.form.get('processing_fee', 0))
+        legal_fee = float(request.form.get('legal_fee', 0))
+        other_fees = float(request.form.get('other_fees', 0))
+        fee_description = request.form.get('fee_description', '')
         
-        loan_id = lms.create_loan(client_id, principal_amount, interest_rate, loan_term_days, installments, processing_fee)
+        loan_id = lms.create_loan(
+            client_id=client_id,
+            principal_amount=principal_amount,
+            interest_rate=interest_rate,
+            loan_term_days=loan_term_days,
+            effective_date=effective_date,
+            installments=installments,
+            processing_fee=processing_fee,
+            legal_fee=legal_fee,
+            other_fees=other_fees,
+            fee_description=fee_description
+        )
         return redirect(url_for('loan_detail', loan_id=loan_id))
     
-    # GET request - fetch clients
     conn = sqlite3.connect(lms.db_name)
     cursor = conn.cursor()
-    # Get all clients: id, company_name, contact_person, rating_score
     cursor.execute('SELECT client_id, company_name, contact_person, rating_score FROM clients ORDER BY company_name')
     clients = cursor.fetchall()
     conn.close()
@@ -488,20 +507,26 @@ def edit_loan(loan_id):
         principal_amount = float(request.form['principal_amount'])
         interest_rate = float(request.form['interest_rate']) / 100
         loan_term_days = int(request.form['loan_term_days'])
+        effective_date = request.form['effective_date']
+        maturity_date = request.form['maturity_date']
         installments = int(request.form.get('installments', 1))
         processing_fee = float(request.form.get('processing_fee', 0))
-        due_date = request.form['due_date']
+        legal_fee = float(request.form.get('legal_fee', 0))
+        other_fees = float(request.form.get('other_fees', 0))
         
+        # Recalculate total
         interest_amount = principal_amount * interest_rate * (loan_term_days / 365)
-        total_amount = principal_amount + interest_amount + processing_fee
+        total_amount = principal_amount + interest_amount + processing_fee + legal_fee + other_fees
         
         cursor.execute('''
             UPDATE loans 
             SET principal_amount = ?, interest_rate = ?, loan_term_days = ?, 
-                installments = ?, processing_fee = ?, due_date = ?, total_amount = ?
+                effective_date = ?, due_date = ?, installments = ?,
+                processing_fee = ?, legal_fee = ?, other_fees = ?, total_amount = ?
             WHERE loan_id = ?
-        ''', (principal_amount, interest_rate, loan_term_days, installments, 
-              processing_fee, due_date, total_amount, loan_id))
+        ''', (principal_amount, interest_rate, loan_term_days, 
+              effective_date, maturity_date, installments,
+              processing_fee, legal_fee, other_fees, total_amount, loan_id))
         
         conn.commit()
         conn.close()
