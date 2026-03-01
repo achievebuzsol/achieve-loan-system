@@ -12,8 +12,12 @@
                 <select class="form-select" name="client_id" id="client_select" required>
                     <option value="">-- Select a Client --</option>
                     {% for client in clients %}
-                    <option value="{{ client[0] }}" data-rating="{{ client[3] if client|length > 3 else 5 }}">
-                        {{ client[1] or client[2] }} {% if client[1] %}({{ client[2] }}){% endif %}
+                    <option value="{{ client[0] }}" data-rating="{{ client[3] }}">
+                        {% if client[1] %}
+                            {{ client[1] }} ({{ client[2] }})
+                        {% else %}
+                            {{ client[2] }}
+                        {% endif %}
                     </option>
                     {% endfor %}
                 </select>

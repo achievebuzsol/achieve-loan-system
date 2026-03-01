@@ -456,7 +456,7 @@ def edit_client(client_id):
     
     return render_template('edit_client.html', client=client, address_parts=address_parts)
 
-@@app.route('/create_loan', methods=['GET', 'POST'])
+@app.route('/create_loan', methods=['GET', 'POST'])
 def create_loan():
     if request.method == 'POST':
         client_id = int(request.form['client_id'])
@@ -472,15 +472,10 @@ def create_loan():
     # GET request - fetch clients
     conn = sqlite3.connect(lms.db_name)
     cursor = conn.cursor()
-    # Get all clients with their rating score
+    # Get all clients: id, company_name, contact_person, rating_score
     cursor.execute('SELECT client_id, company_name, contact_person, rating_score FROM clients ORDER BY company_name')
     clients = cursor.fetchall()
     conn.close()
-    
-    # Debug: print to logs
-    print(f"Found {len(clients)} clients for dropdown")
-    for c in clients:
-        print(f"  Client: {c}")
     
     return render_template('create_loan.html', clients=clients)
 
