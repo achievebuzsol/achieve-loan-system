@@ -9,9 +9,11 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                   <th>Company</th>
+                    <th>Company</th>
                     <th>Contact</th>
                     <th>Email</th>
+                    <th>Phone</th>
+                    <th>Parish</th>
                     <th>Rating</th>
                     <th>Actions</th>
                 </tr>
@@ -19,22 +21,25 @@
             <tbody>
                 {% for client in clients %}
                 <tr>
-                    <td>{{ client[1] }}</td>
+                    <td>{{ client[1] or 'N/A' }}</td>
                     <td>{{ client[2] }}</td>
                     <td>{{ client[3] }}</td>
+                    <td>{{ client[4] }}</td>
+                    <td>{{ client[7] or 'N/A' }}</td>
                     <td>
+                        {% set rating = client[8] if client[8] else 5.0 %}
                         {% for i in range(5) %}
-                            {% if client[6] > i %}
+                            {% if rating > i %}
                                 <i class="fas fa-star text-warning"></i>
                             {% else %}
                                 <i class="far fa-star text-warning"></i>
                             {% endif %}
                         {% endfor %}
-                        ({{ "%.1f"|format(client[6]) }})
+                        ({{ "%.1f"|format(rating|float) }})
                     </td>
                     <td>
-                       <a href="{{ url_for('client_detail', client_id=client[0]) }}" class="btn btn-sm btn-primary">View</a>
-<a href="{{ url_for('edit_client', client_id=client[0]) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="{{ url_for('client_detail', client_id=client[0]) }}" class="btn btn-sm btn-primary">View</a>
+                        <a href="{{ url_for('edit_client', client_id=client[0]) }}" class="btn btn-sm btn-warning">Edit</a>
                     </td>
                 </tr>
                 {% endfor %}

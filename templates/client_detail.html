@@ -7,14 +7,18 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5>{{ client[1] }}</h5>
+                <h5>{{ client[1] or 'Individual Client' }}</h5>
             </div>
             <div class="card-body">
                 <p><strong>Contact:</strong> {{ client[2] }}</p>
                 <p><strong>Email:</strong> {{ client[3] }}</p>
                 <p><strong>Phone:</strong> {{ client[4] }}</p>
-                <p><strong>Address:</strong> {{ client[5] }}</p>
-                <p><strong>Rating:</strong> {{ client[6] }}/10</p>
+                <p><strong>Address:</strong><br>
+                    {{ client[5] or '' }}<br>
+                    {{ client[6] or '' }}<br>
+                    {{ client[7] or '' }}
+                </p>
+                <p><strong>Rating:</strong> {{ client[8] or 5.0 }}/10</p>
             </div>
         </div>
     </div>
