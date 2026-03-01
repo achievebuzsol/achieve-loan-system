@@ -558,17 +558,6 @@ def api_notifications():
     conn.close()
     return jsonify(notifications)
     
-@app.route('/reset-db')
-def reset_db():
-    import os
-    try:
-        if os.path.exists(lms.db_name):
-            os.remove(lms.db_name)
-        # Reinitialize with new schema
-        lms.__init__(db_name=lms.db_name)
-        return "Database reset successfully! <br><a href='/add_client'>Add Client</a> | <a href='/'>Dashboard</a>"
-    except Exception as e:
-        return f"Error: {str(e)}"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
