@@ -5,29 +5,34 @@
 
 <div class="card">
     <div class="card-body">
+        {% if clients %}
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label">Select Client</label>
+                <label class="form-label">Select Client <span class="text-danger">*</span></label>
                 <select class="form-select" name="client_id" id="client_select" required>
+                    <option value="">-- Select a Client --</option>
                     {% for client in clients %}
-                    <option value="{{ client[0] }}" data-rating="{{ client[2] }}">{{ client[1] }}</option>
+                    <option value="{{ client[0] }}" data-rating="{{ client[3] if client|length > 3 else 5 }}">
+                        {{ client[1] or client[2] }} {% if client[1] %}({{ client[2] }}){% endif %}
+                    </option>
                     {% endfor %}
                 </select>
+                <small class="text-muted">Found {{ clients|length }} client(s)</small>
             </div>
             
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">Principal Amount ($)</label>
-                        <input type="number" class="form-control" name="principal_amount" step="0.01" required>
+                        <label class="form-label">Principal Amount ($) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="principal_amount" step="0.01" min="1" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">Interest Rate (%)</label>
-                        <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" required>
+                        <label class="form-label">Interest Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="interest_rate" id="interest_rate" step="0.1" value="15.0" min="0" max="100" required>
                         <small class="text-muted">
-                            Base rate: 15%. Client rating may reduce this rate.
+                            Base rate: 15%. Client rating may reduce this.
                             <span id="rate_info" class="text-info"></span>
                         </small>
                     </div>
@@ -37,36 +42,45 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">Loan Term (Days)</label>
-                        <input type="number" class="form-control" name="loan_term_days" required>
+                        <label class="form-label">Loan Term (Days) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="loan_term_days" min="1" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Number of Installments</label>
-                        <input type="number" class="form-control" name="installments" min="1" value="1" required>
-                        <small class="text-muted">How many payments to split the loan into</small>
+                        <input type="number" class="form-control" name="installments" min="1" value="1">
+                        <small class="text-muted">How many payments to split into</small>
                     </div>
                 </div>
             </div>
             
             <div class="mb-3">
                 <label class="form-label">Processing Fee ($)</label>
-                <input type="number" class="form-control" name="processing_fee" step="0.01" value="0" required>
+                <input type="number" class="form-control" name="processing_fee" step="0.01" value="0" min="0">
                 <small class="text-muted">One-time administrative fee</small>
             </div>
             
             <button type="submit" class="btn btn-primary">Create Loan</button>
+            <a href="{{ url_for('loans') }}" class="btn btn-secondary">Cancel</a>
         </form>
+        {% else %}
+        <div class="alert alert-warning">
+            <h5>No clients available!</h5>
+            <p>You need to <a href="{{ url_for('add_client') }}">add a client</a> before creating a loan.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
 document.getElementById('client_select').addEventListener('change', function() {
     var selected = this.options[this.selectedIndex];
-    var rating = selected.getAttribute('data-rating');
+    if (selected.value === "") return;
+    
+    var rating = selected.getAttribute('data-rating') || 5;
     var baseRate = 15.0;
-    var discount = (rating - 1) * 0.5;
+    var discount = (parseFloat(rating) - 1) * 0.5;
     var finalRate = Math.max(baseRate - discount, baseRate * 0.75);
     document.getElementById('interest_rate').value = finalRate.toFixed(1);
     document.getElementById('rate_info').textContent = ' (Client rating: ' + rating + '/10, Suggested rate: ' + finalRate.toFixed(1) + '%)';
