@@ -10,16 +10,72 @@
                 <h5>Loan Information</h5>
             </div>
             <div class="card-body">
+                {% set processing_fee = loan.processing_fee|float if loan.processing_fee else 0 %}
+                {% set legal_fee = loan.legal_fee|float if loan.legal_fee else 0 %}
+                {% set other_fees = loan.other_fees|float if loan.other_fees else 0 %}
+                {% set total_fees = processing_fee + legal_fee + other_fees %}
+                {% set interest_amount = loan.total_amount|float - loan.principal_amount|float - total_fees %}
+                
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Client:</strong> {{ loan.company_name }}</p>
-                        <p><strong>Principal:</strong> ${{ "%.2f"|format(loan.principal_amount) }}</p>
-                        <p><strong>Interest Rate:</strong> {{ "%.1f"|format(loan.interest_rate * 100) }}%</p>
+                        <p><strong>Principal Amount:</strong> ${{ "%.2f"|format(loan.principal_amount|float) }}</p>
+                        <p><strong>Interest Rate:</strong> {{ "%.2f"|format(loan.interest_rate|float * 100) }}%</p>
+                        <p><strong>Number of Installments:</strong> {{ loan.installments or 1 }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Total Amount:</strong> ${{ "%.2f"|format(loan.total_amount) }}</p>
-                        <p><strong>Paid:</strong> ${{ "%.2f"|format(loan.paid_amount) }}</p>
-                        <p><strong>Outstanding:</strong> ${{ "%.2f"|format(loan.outstanding_amount) }}</p>
+                        <p><strong>Effective Date:</strong> {{ loan.effective_date or loan.start_date }}</p>
+                        <p><strong>Maturity Date:</strong> {{ loan.due_date }}</p>
+                        <p><strong>Loan Term:</strong> {{ loan.loan_term_days }} days</p>
+                        <p><strong>Status:</strong> 
+                            {% if loan.status == 'active' %}
+                                <span class="badge bg-warning">Active</span>
+                            {% elif loan.status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-danger">Delinquent</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Fee Breakdown</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <p><strong>Processing Fee:</strong> ${{ "%.2f"|format(processing_fee) }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Legal Fee:</strong> ${{ "%.2f"|format(legal_fee) }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Other Fees:</strong> ${{ "%.2f"|format(other_fees) }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Total Fees:</strong> ${{ "%.2f"|format(total_fees) }}</p>
+                    </div>
+                </div>
+                {% if loan.fee_description %}
+                <p><strong>Fee Description:</strong> {{ loan.fee_description }}</p>
+                {% endif %}
+                
+                <hr>
+                
+                <h6>Payment Summary</h6>
+                <div class="row">
+                    <div class="col-md-3"><strong>Principal:</strong> ${{ "%.2f"|format(loan.principal_amount|float) }}</div>
+                    <div class="col-md-3"><strong>Interest:</strong> ${{ "%.2f"|format(interest_amount) }}</div>
+                    <div class="col-md-3"><strong>Fees:</strong> ${{ "%.2f"|format(total_fees) }}</div>
+                    <div class="col-md-3"><strong>Total:</strong> ${{ "%.2f"|format(loan.total_amount|float) }}</div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><strong>Paid Amount:</strong> ${{ "%.2f"|format(loan.paid_amount|float) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Outstanding:</strong> <span class="{% if loan.outstanding_amount > 0 %}text-danger{% else %}text-success{% endif %} fw-bold">${{ "%.2f"|format(loan.outstanding_amount|float) }}</span></p>
                     </div>
                 </div>
             </div>
@@ -37,20 +93,22 @@
                             <th>Date</th>
                             <th>Amount</th>
                             <th>Method</th>
+                            <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for payment in loan.payments %}
                         <tr>
-                            <td>{{ payment[3] }}</td>
-                            <td>${{ "%.2f"|format(payment[2]) }}</td>
-                            <td>{{ payment[4] }}</td>
+                            <td>{{ payment.payment_date }}</td>
+                            <td>${{ "%.2f"|format(payment.amount|float) }}</td>
+                            <td>{{ payment.payment_method }}</td>
+                            <td>{{ payment.notes or '-' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
                 {% else %}
-                <p>No payments recorded.</p>
+                <p>No payments recorded yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -72,7 +130,12 @@
                             <option value="cash">Cash</option>
                             <option value="bank_transfer">Bank Transfer</option>
                             <option value="cheque">Cheque</option>
+                            <option value="other">Other</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Notes</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
                     </div>
                     <button type="submit" class="btn btn-light w-100">Record Payment</button>
                 </form>
@@ -83,6 +146,16 @@
             <i class="fas fa-check-circle"></i> This loan is fully paid.
         </div>
         {% endif %}
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('edit_loan', loan_id=loan.loan_id) }}" class="btn btn-warning w-100 mb-2">Edit Loan</a>
+                <a href="{{ url_for('client_detail', client_id=loan.client_id) }}" class="btn btn-info w-100">View Client</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
