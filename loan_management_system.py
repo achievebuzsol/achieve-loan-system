@@ -172,7 +172,36 @@ class LoanManagementSystem:
         start_date = effective
         due_date = effective + timedelta(days=loan_term_days)
         
+        # Add this to your app initialization
+    def init_db():
+        conn = get_db_connection()
+        cursor = conn.cursor()
+    
+        # Create table if not exists with ALL columns
         cursor.execute('''
+            CREATE TABLE IF NOT EXISTS loans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_id INTEGER,
+                principal_amount REAL,
+                interest_rate REAL,
+                loan_term_days INTEGER,
+                installments INTEGER,  -- Ensure this is here
+                processing_fee REAL,
+                legal_fee REAL,
+                other_fees REAL,
+                fee_description TEXT,
+                effective_date TEXT,
+                start_date TEXT,
+                due_date TEXT,
+                total_amount REAL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+# Call this when app starts
+init_db()
+       cursor.execute('''
             INSERT INTO loans (client_id, principal_amount, interest_rate, loan_term_days, 
                              installments, processing_fee, legal_fee, other_fees, fee_description,
                              effective_date, start_date, due_date, total_amount)
