@@ -100,21 +100,20 @@ class LoanManagementSystem:
             )
         ''')
             
-            # Installment schedule table - new
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS installment_schedule (
-            schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            loan_id INTEGER,
-            installment_number INTEGER,
-            due_date DATE,
-            amount_due REAL,
-            amount_paid REAL DEFAULT 0,
-            status TEXT DEFAULT 'pending',  -- pending, paid, overdue
-            FOREIGN KEY (loan_id) REFERENCES loans (loan_id)
-        )
-    ''')
-        
-        
+        # Installment schedule table - new
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS installment_schedule (
+                schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                loan_id INTEGER,
+                installment_number INTEGER,
+                due_date DATE,
+                amount_due REAL,
+                amount_paid REAL DEFAULT 0,
+                status TEXT DEFAULT 'pending',  -- pending, paid, overdue
+                FOREIGN KEY (loan_id) REFERENCES loans (loan_id)
+            )
+        ''')
+                
         conn.commit()
         conn.close()
     
