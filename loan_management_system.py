@@ -235,7 +235,7 @@ class LoanManagementSystem:
         
         conn.close()
     
-    def check_delinquent_loans(self):
+        def check_delinquent_loans(self):
         """Check for delinquent loans and create notifications"""
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
@@ -246,24 +246,42 @@ class LoanManagementSystem:
             SELECT loan_id, client_id, due_date, total_amount, paid_amount
             FROM loans 
             WHERE status = 'active' AND due_date < ?
-        ''', (today,))
+        ''', (today.strftime('%Y-%m-%d'),))
         
         delinquent_loans = cursor.fetchall()
         
         for loan in delinquent_loans:
-            loan_id, client_id, due_date, total_amount, paid_amount = loan
-            outstanding = total_amount - paid_amount
-            days_overdue = (today - due_date).days
+            loan_id, client_id, due_date_str, total_amount, paid_amount = loan
             
+            # Convert string date to date object
+            try:
+                due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
+                days_overdue = (today - due_date).days
+            except (ValueError, TypeError):
+                # If date parsing fails, skip this loan
+                continue
+            
+            outstanding = total_amount - paid_amount
+            
+            # Update loan status to delinquent
             cursor.execute('UPDATE loans SET status = "delinquent" WHERE loan_id = ?', (loan_id,))
             
+            # Create notification
             message = f"Loan #{loan_id} is {days_overdue} days overdue. Outstanding amount: ${outstanding:.2f}"
             
+            # Check if notification already exists
             cursor.execute('''
-                INSERT INTO notifications (loan_id, notification_type, message)
-                VALUES (?, 'delinquent', ?)
-            ''', (loan_id, message))
+                SELECT notification_id FROM notifications 
+                WHERE loan_id = ? AND notification_type = 'delinquent' AND status = 'pending'
+            ''', (loan_id,))
             
+            if not cursor.fetchone():
+                cursor.execute('''
+                    INSERT INTO notifications (loan_id, notification_type, message)
+                    VALUES (?, 'delinquent', ?)
+                ''', (loan_id, message))
+            
+            # Update client delinquent count
             cursor.execute('UPDATE clients SET delinquent_loans = delinquent_loans + 1 WHERE client_id = ?', (client_id,))
         
         conn.commit()
