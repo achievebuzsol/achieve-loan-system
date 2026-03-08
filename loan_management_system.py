@@ -235,31 +235,26 @@ class LoanManagementSystem:
         
         conn.close()
     
-        def check_delinquent_loans(self):
+    def check_delinquent_loans(self):
         """Check for delinquent loans and create notifications"""
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
         today = datetime.now().date()
+        today_str = today.strftime('%Y-%m-%d')
         
+        # Get all active loans where due_date < today
         cursor.execute('''
-            SELECT loan_id, client_id, due_date, total_amount, paid_amount
+            SELECT loan_id, client_id, due_date, total_amount, paid_amount, 
+                   julianday(?) - julianday(due_date) as days_overdue
             FROM loans 
             WHERE status = 'active' AND due_date < ?
-        ''', (today.strftime('%Y-%m-%d'),))
+        ''', (today_str, today_str))
         
         delinquent_loans = cursor.fetchall()
         
         for loan in delinquent_loans:
-            loan_id, client_id, due_date_str, total_amount, paid_amount = loan
-            
-            # Convert string date to date object
-            try:
-                due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-                days_overdue = (today - due_date).days
-            except (ValueError, TypeError):
-                # If date parsing fails, skip this loan
-                continue
+            loan_id, client_id, due_date, total_amount, paid_amount, days_overdue = loan
             
             outstanding = total_amount - paid_amount
             
@@ -267,7 +262,7 @@ class LoanManagementSystem:
             cursor.execute('UPDATE loans SET status = "delinquent" WHERE loan_id = ?', (loan_id,))
             
             # Create notification
-            message = f"Loan #{loan_id} is {days_overdue} days overdue. Outstanding amount: ${outstanding:.2f}"
+            message = f"Loan #{loan_id} is {int(days_overdue)} days overdue. Outstanding amount: ${outstanding:.2f}"
             
             # Check if notification already exists
             cursor.execute('''
