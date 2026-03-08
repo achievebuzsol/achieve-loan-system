@@ -49,12 +49,16 @@
                 <h5><i class="fas fa-exclamation-circle"></i> Recent Alerts</h5>
             </div>
             <div class="card-body">
-                {% for notification in data.recent_notifications %}
-                <div class="alert alert-danger">
-                    <strong>{{ notification.company_name }}</strong><br>
-                    {{ notification.message }}
-                </div>
-                {% endfor %}
+                {% if data.recent_notifications %}
+                    {% for notification in data.recent_notifications %}
+                    <div class="alert alert-danger">
+                        <strong>{{ notification.company_name }}</strong><br>
+                        {{ notification.message }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No alerts at this time</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -64,9 +68,17 @@
                 <h5><i class="fas fa-chart-line"></i> Financial Summary</h5>
             </div>
             <div class="card-body">
-                <p>Total Principal: ${{ "%.2f"|format(data.total_principal) }}</p>
-                <p>Total Paid: ${{ "%.2f"|format(data.total_paid) }}</p>
-                <p>Outstanding: ${{ "%.2f"|format(data.total_principal - data.total_paid) }}</p>
+                <p><strong>Total Principal Lent:</strong> ${{ "%.2f"|format(data.total_principal) }}</p>
+                <p><strong>Total Amount Paid:</strong> ${{ "%.2f"|format(data.total_paid) }}</p>
+                <p><strong>Total Outstanding:</strong> <span class="text-danger fw-bold">${{ "%.2f"|format(data.total_outstanding) }}</span></p>
+                <hr>
+                <p class="mb-0"><strong>Collection Rate:</strong> 
+                    {% if data.total_principal > 0 %}
+                        {{ "%.1f"|format((data.total_paid / data.total_principal) * 100) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </p>
             </div>
         </div>
     </div>

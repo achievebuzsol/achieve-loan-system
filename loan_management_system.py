@@ -312,17 +312,16 @@ class LoanManagementSystem:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
+        # Check for delinquent loans first
+        self.check_delinquent_loans()
+        
+        # Client counts
         cursor.execute('SELECT COUNT(*) FROM clients')
         total_clients = cursor.fetchone()[0]
         
+        # Loan counts
         cursor.execute('SELECT COUNT(*) FROM loans')
         total_loans = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT SUM(principal_amount) FROM loans')
-        total_principal = cursor.fetchone()[0] or 0
-        
-        cursor.execute('SELECT SUM(total_amount) FROM loans WHERE status = "paid"')
-        total_paid = cursor.fetchone()[0] or 0
         
         cursor.execute('SELECT COUNT(*) FROM loans WHERE status = "active"')
         active_loans = cursor.fetchone()[0]
@@ -330,11 +329,26 @@ class LoanManagementSystem:
         cursor.execute('SELECT COUNT(*) FROM loans WHERE status = "delinquent"')
         delinquent_loans = cursor.fetchone()[0]
         
+        # Financial calculations - ONLY outstanding amounts
+        cursor.execute('SELECT SUM(principal_amount) FROM loans')
+        total_principal = cursor.fetchone()[0] or 0
+        
+        # Total paid amount
+        cursor.execute('SELECT SUM(paid_amount) FROM loans')
+        total_paid = cursor.fetchone()[0] or 0
+        
+        # Outstanding = total loan amounts - total paid
+        cursor.execute('SELECT SUM(total_amount) FROM loans')
+        total_loan_value = cursor.fetchone()[0] or 0
+        total_outstanding = total_loan_value - total_paid
+        
+        # Recent notifications
         cursor.execute('''
             SELECT n.*, c.company_name 
             FROM notifications n
             JOIN loans l ON n.loan_id = l.loan_id
             JOIN clients c ON l.client_id = c.client_id
+            WHERE n.status = 'pending'
             ORDER BY n.sent_date DESC
             LIMIT 10
         ''')
@@ -351,6 +365,7 @@ class LoanManagementSystem:
             'total_loans': total_loans,
             'total_principal': total_principal,
             'total_paid': total_paid,
+            'total_outstanding': total_outstanding,
             'active_loans': active_loans,
             'delinquent_loans': delinquent_loans,
             'recent_notifications': recent_notifications
@@ -378,11 +393,22 @@ def clients():
 def loans():
     conn = sqlite3.connect(lms.db_name)
     cursor = conn.cursor()
+    
+    # Check for delinquent loans before displaying
+    lms.check_delinquent_loans()
+    
     cursor.execute('''
         SELECT l.*, c.company_name, c.contact_person
         FROM loans l
         JOIN clients c ON l.client_id = c.client_id
-        ORDER BY l.created_date DESC
+        ORDER BY 
+            CASE l.status 
+                WHEN 'delinquent' THEN 1 
+                WHEN 'active' THEN 2 
+                WHEN 'paid' THEN 3 
+                ELSE 4 
+            END,
+            l.due_date ASC
     ''')
     loans_data = cursor.fetchall()
     conn.close()
@@ -549,7 +575,38 @@ def make_payment(loan_id):
     payment_method = request.form['payment_method']
     notes = request.form.get('notes', '')
     
-    lms.make_payment(loan_id, amount, payment_method, notes)
+    conn = sqlite3.connect(lms.db_name)
+    cursor = conn.cursor()
+    
+    # Get current loan info
+    cursor.execute('SELECT paid_amount, total_amount, client_id, status FROM loans WHERE loan_id = ?', (loan_id,))
+    result = cursor.fetchone()
+    
+    if result:
+        paid_amount, total_amount, client_id, current_status = result
+        new_paid_amount = paid_amount + amount
+        
+        # Record the payment
+        cursor.execute('''
+            INSERT INTO payments (loan_id, amount, payment_date, payment_method, notes)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (loan_id, amount, datetime.now().date(), payment_method, notes))
+        
+        # Update paid amount
+        cursor.execute('UPDATE loans SET paid_amount = ? WHERE loan_id = ?', (new_paid_amount, loan_id))
+        
+        # Check if fully paid
+        if new_paid_amount >= total_amount:
+            cursor.execute('UPDATE loans SET status = "paid" WHERE loan_id = ?', (loan_id,))
+            cursor.execute('UPDATE clients SET paid_loans = paid_loans + 1 WHERE client_id = ?', (client_id,))
+            lms.update_client_rating(client_id)
+        # If was delinquent but now paid partially, set back to active
+        elif current_status == 'delinquent':
+            cursor.execute('UPDATE loans SET status = "active" WHERE loan_id = ?', (loan_id,))
+        
+        conn.commit()
+    
+    conn.close()
     return redirect(url_for('loan_detail', loan_id=loan_id))
 
 @app.route('/api/notifications')
