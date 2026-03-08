@@ -4,45 +4,65 @@
 <h2 class="mb-4">Dashboard Overview</h2>
 
 <div class="row mb-4">
+    <!-- Total Clients - Clickable -->
     <div class="col-md-3">
-        <div class="card metric-card text-center p-3">
-            <div class="card-body">
-                <i class="fas fa-users fa-2x mb-2"></i>
-                <h2>{{ data.total_clients }}</h2>
-                <p>Total Clients</p>
+        <a href="{{ url_for('clients') }}" class="text-decoration-none">
+            <div class="card metric-card text-center p-3 h-100">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h2>{{ data.total_clients }}</h2>
+                    <p>Total Clients</p>
+                    <small class="text-white-50">Click to view all clients</small>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
+    
+    <!-- Total Loans - Clickable -->
     <div class="col-md-3">
-        <div class="card bg-info text-white text-center p-3">
-            <div class="card-body">
-                <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
-                <h2>{{ data.total_loans }}</h2>
-                <p>Total Loans</p>
+        <a href="{{ url_for('loans') }}" class="text-decoration-none">
+            <div class="card bg-info text-white text-center p-3 h-100">
+                <div class="card-body">
+                    <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
+                    <h2>{{ data.total_loans }}</h2>
+                    <p>Total Loans</p>
+                    <small class="text-white-50">Click to view all loans</small>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
+    
+    <!-- Active Loans - Clickable -->
     <div class="col-md-3">
-        <div class="card bg-warning text-white text-center p-3">
-            <div class="card-body">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <h2>{{ data.active_loans }}</h2>
-                <p>Active Loans</p>
+        <a href="{{ url_for('loans_filtered', status='active') }}" class="text-decoration-none">
+            <div class="card bg-warning text-white text-center p-3 h-100">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h2>{{ data.active_loans }}</h2>
+                    <p>Active Loans</p>
+                    <small class="text-white-50">Click to view active loans</small>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
+    
+    <!-- Delinquent Loans - Clickable -->
     <div class="col-md-3">
-        <div class="card bg-danger text-white text-center p-3">
-            <div class="card-body">
-                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                <h2>{{ data.delinquent_loans }}</h2>
-                <p>Delinquent</p>
+        <a href="{{ url_for('loans_filtered', status='delinquent') }}" class="text-decoration-none">
+            <div class="card bg-danger text-white text-center p-3 h-100">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h2>{{ data.delinquent_loans }}</h2>
+                    <p>Delinquent</p>
+                    <small class="text-white-50">Click to view delinquent loans</small>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
 <div class="row">
+    <!-- Recent Alerts -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-danger text-white">
@@ -54,6 +74,8 @@
                     <div class="alert alert-danger">
                         <strong>{{ notification.company_name }}</strong><br>
                         {{ notification.message }}
+                        <br>
+                        <a href="{{ url_for('loan_detail', loan_id=notification.loan_id) }}" class="btn btn-sm btn-light mt-2">View Loan</a>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -62,14 +84,32 @@
             </div>
         </div>
     </div>
+    
+    <!-- Financial Summary -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-success text-white">
                 <h5><i class="fas fa-chart-line"></i> Financial Summary</h5>
             </div>
             <div class="card-body">
-                <p><strong>Total Principal Lent:</strong> ${{ "%.2f"|format(data.total_principal) }}</p>
-                <p><strong>Total Amount Paid:</strong> ${{ "%.2f"|format(data.total_paid) }}</p>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <a href="{{ url_for('loans') }}" class="text-decoration-none">
+                            <div class="p-3 bg-light rounded text-center">
+                                <h4 class="text-primary">${{ "%.2f"|format(data.total_principal) }}</h4>
+                                <small>Total Principal Lent<br>Click to view</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('loans_filtered', status='paid') }}" class="text-decoration-none">
+                            <div class="p-3 bg-light rounded text-center">
+                                <h4 class="text-success">${{ "%.2f"|format(data.total_paid) }}</h4>
+                                <small>Total Paid<br>Click to view paid</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
                 <p><strong>Total Outstanding:</strong> <span class="text-danger fw-bold">${{ "%.2f"|format(data.total_outstanding) }}</span></p>
                 <hr>
                 <p class="mb-0"><strong>Collection Rate:</strong> 
@@ -79,6 +119,28 @@
                         0%
                     {% endif %}
                 </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('add_client') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-user-plus"></i> Add New Client
+                </a>
+                <a href="{{ url_for('create_loan') }}" class="btn btn-success me-2">
+                    <i class="fas fa-plus-circle"></i> Create New Loan
+                </a>
+                <a href="{{ url_for('loans_filtered', status='delinquent') }}" class="btn btn-danger">
+                    <i class="fas fa-exclamation-triangle"></i> View Delinquent Loans
+                </a>
             </div>
         </div>
     </div>

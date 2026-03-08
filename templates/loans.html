@@ -1,8 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Loans</h2>
-<a href="{{ url_for('create_loan') }}" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Create New Loan</a>
+<h2 class="mb-4">All Loans</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <a href="{{ url_for('create_loan') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Loan
+        </a>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('loans_filtered', status='active') }}" class="btn btn-outline-warning">Active</a>
+            <a href="{{ url_for('loans_filtered', status='delinquent') }}" class="btn btn-outline-danger">Delinquent</a>
+            <a href="{{ url_for('loans_filtered', status='paid') }}" class="btn btn-outline-success">Paid</a>
+        </div>
+    </div>
+</div>
 
 <div class="card">
     <div class="card-body">
@@ -15,21 +29,12 @@
                     <th>Interest</th>
                     <th>Effective Date</th>
                     <th>Maturity Date</th>
-                    <th>Fees</th>
-                    <th>Total</th>
-                    <th>Paid</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for loan in loans %}
-                {% set processing_fee = loan[6]|float if loan[6] else 0 %}
-                {% set legal_fee = loan[12]|float if loan[12] else 0 %}
-                {% set other_fees = loan[13]|float if loan[13] else 0 %}
-                {% set total_fees = processing_fee + legal_fee + other_fees %}
-                {% set paid_amount = loan[14]|float if loan[14] else 0 %}
-                {% set total_amount = loan[9]|float if loan[9] else 0 %}
                 <tr class="{% if loan[15] == 'delinquent' %}table-danger{% elif loan[15] == 'paid' %}table-success{% endif %}">
                     <td>#{{ loan[0] }}</td>
                     <td>{{ loan[16] }}</td>
@@ -37,9 +42,6 @@
                     <td>{{ "%.1f"|format(loan[3]|float * 100) }}%</td>
                     <td>{{ loan[10] }}</td>
                     <td>{{ loan[11] }}</td>
-                    <td>${{ "%.2f"|format(total_fees) }}</td>
-                    <td>${{ "%.2f"|format(total_amount) }}</td>
-                    <td>${{ "%.2f"|format(paid_amount) }}</td>
                     <td>
                         {% if loan[15] == 'active' %}
                             <span class="badge bg-warning">Active</span>
@@ -47,8 +49,6 @@
                             <span class="badge bg-success">Paid</span>
                         {% elif loan[15] == 'delinquent' %}
                             <span class="badge bg-danger">Delinquent</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ loan[15] }}</span>
                         {% endif %}
                     </td>
                     <td>

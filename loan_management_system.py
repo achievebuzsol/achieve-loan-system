@@ -643,6 +643,35 @@ def api_notifications():
     
     conn.close()
     return jsonify(notifications)
+    
+@app.route('/loans/<status>')
+def loans_filtered(status):
+    """Show loans filtered by status"""
+    conn = sqlite3.connect(lms.db_name)
+    cursor = conn.cursor()
+    
+    # Check for delinquent loans first
+    lms.check_delinquent_loans()
+    
+    # Map status to display title
+    status_titles = {
+        'active': 'Active Loans',
+        'delinquent': 'Delinquent Loans',
+        'paid': 'Paid Loans'
+    }
+    page_title = status_titles.get(status, f'{status.title()} Loans')
+    
+    cursor.execute('''
+        SELECT l.*, c.company_name, c.contact_person
+        FROM loans l
+        JOIN clients c ON l.client_id = c.client_id
+        WHERE l.status = ?
+        ORDER BY l.due_date ASC
+    ''', (status,))
+    loans_data = cursor.fetchall()
+    conn.close()
+    
+    return render_template('loans_filtered.html', loans=loans_data, status=status, page_title=page_title)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
