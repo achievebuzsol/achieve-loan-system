@@ -34,6 +34,9 @@ class LoanManagementSystem:
                 street_address TEXT,
                 city TEXT,
                 parish TEXT,
+                id_type TEXT,  -- DL, PP, or National ID
+                id_number TEXT,
+                id_document_path TEXT,  -- File path for uploaded ID
                 rating_score REAL DEFAULT 5.0,
                 total_loans INTEGER DEFAULT 0,
                 paid_loans INTEGER DEFAULT 0,
@@ -50,7 +53,11 @@ class LoanManagementSystem:
                 principal_amount REAL NOT NULL,
                 interest_rate REAL NOT NULL,
                 loan_term_days INTEGER NOT NULL,
-                installments INTEGER DEFAULT 1,
+                installment_amount REAL,
+                installment_frequency TEXT,  -- weekly, bi-weekly, monthly
+                number_of_installments INTEGER DEFAULT 1,
+                first_payment_date DATE,
+                payment_method TEXT,  -- Salary Deduction or Bank draft
                 processing_fee REAL DEFAULT 0,
                 legal_fee REAL DEFAULT 0,
                 other_fees REAL DEFAULT 0,
@@ -61,6 +68,7 @@ class LoanManagementSystem:
                 total_amount REAL NOT NULL,
                 paid_amount REAL DEFAULT 0,
                 status TEXT DEFAULT 'active',
+                agreement_generated BOOLEAN DEFAULT 0,
                 created_date DATE DEFAULT CURRENT_DATE,
                 FOREIGN KEY (client_id) REFERENCES clients (client_id)
             )
@@ -91,6 +99,21 @@ class LoanManagementSystem:
                 FOREIGN KEY (loan_id) REFERENCES loans (loan_id)
             )
         ''')
+            
+            # Installment schedule table - new
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS installment_schedule (
+            schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            loan_id INTEGER,
+            installment_number INTEGER,
+            due_date DATE,
+            amount_due REAL,
+            amount_paid REAL DEFAULT 0,
+            status TEXT DEFAULT 'pending',  -- pending, paid, overdue
+            FOREIGN KEY (loan_id) REFERENCES loans (loan_id)
+        )
+    ''')
+        
         
         conn.commit()
         conn.close()
