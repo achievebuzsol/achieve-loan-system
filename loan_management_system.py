@@ -199,9 +199,9 @@ class LoanManagementSystem:
         conn.commit()
         conn.close()
 
-# Call this when app starts
-init_db()
-       cursor.execute('''
+        # Call this when app starts
+        init_db()
+        cursor.execute('''
             INSERT INTO loans (client_id, principal_amount, interest_rate, loan_term_days, 
                              installments, processing_fee, legal_fee, other_fees, fee_description,
                              effective_date, start_date, due_date, total_amount)
